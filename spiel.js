@@ -50,29 +50,51 @@ let step = 0;
 const yRatio = .3;
 let speed = 0;
 
+const player = new function() {
+  this.x = c.width / 2;
+  this.y = 50;
+  this.truck = new Image()
+  this.truck.src = "truck.png"
+
+  this.draw = function () {
+
+    let point1 = (c.height * .9) - noise(this.x + step) * yRatio;
+    this.y = point1 - 27;
+
+    context.save();
+    context.translate(this.x, this.y);
+    context.drawImage(this.truck, -40, -40, 80, 80);
+    context.restore();
+  }
+}
+
 // draw
 function draw() {
 
   speed -= (speed - 1) * 0.01;
   step += 5 * speed;
   
+  // background
   context.fillStyle = bgColor;
   context.fillRect(0, 0, c.width, c.height);
+
+  // ground
   context.fillStyle = foregroundColor;
   context.strokeStyle = lineColor;
   context.lineWidth = lineWidth;
-
   context.beginPath();
   context.moveTo(offset, c.height - offset);  
-
   for (let i = offset; i < c.width - offset; ++i) {
     context.lineTo(i,(c.height * .9) - noise(i + step) * yRatio);
   }
-
   context.lineTo(c.width - offset, c.height - offset);
   context.closePath();
   context.fill();
   context.stroke();
+
+  player.draw()
+
+  // animation
   requestAnimationFrame(draw);
 }
 
