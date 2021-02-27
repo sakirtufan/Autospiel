@@ -47,10 +47,15 @@ const lineColor = "#2f2519";
 const lineWidth = 5;
 const offset = -10;
 let step = 0;
+const yRatio = .3;
+let speed = 0;
 
 // draw
 function draw() {
-  step++;
+
+  speed -= (speed - 1) * 0.01;
+  step += 5 * speed;
+  
   context.fillStyle = bgColor;
   context.fillRect(0, 0, c.width, c.height);
   context.fillStyle = foregroundColor;
@@ -61,7 +66,7 @@ function draw() {
   context.moveTo(offset, c.height - offset);  
 
   for (let i = offset; i < c.width - offset; ++i) {
-    context.lineTo(i,(c.height * .9) - noise(i + step) * .4);
+    context.lineTo(i,(c.height * .9) - noise(i + step) * yRatio);
   }
 
   context.lineTo(c.width - offset, c.height - offset);
