@@ -62,7 +62,7 @@ let step = 0;
 const yRatio = 0.3;
 let speed = 0;
 let playing = true;
-let desktopControls = { ArrowUp: 0, ArrowLeft: 0, ArrowRight: 0 };
+let controls = { ArrowUp: 0, ArrowLeft: 0, ArrowRight: 0 };
 
 const player = new (function () {
   this.x = c.width / 2;
@@ -70,7 +70,7 @@ const player = new (function () {
   this.truck = new Image();
   this.truck.src = "./UI/truck.png";
   this.rotation = 0;
-  this.gravity = 0;
+  this.ySpeed = 0;
   this.rotationSpeed = 0;
 
   // interface
@@ -108,17 +108,17 @@ const player = new (function () {
   };
 
   this.draw = function () {
-    let point1 = c.height * 0.9 - noise(this.x + step) * yRatio;
-    let point2 = c.height * 0.9 - noise(this.x + step + 5) * yRatio;
+    let point1 = (c.height * .9) - noise(this.x + step) * yRatio;
+    let point2 = (c.height * .9) - noise(this.x + step + 5) * yRatio;
 
     let offset = 28;
 
     // truck is on the ground or in the air
     let ground = 0;
     if (point1 - offset > this.y) {
-      this.gravity += 0.1;
+      this.ySpeed += 0.1;
     } else {
-      this.gravity -= this.y - (point1 - offset);
+      this.ySpeed -= this.y - (point1 - offset);
       this.y = point1 - offset;
       ground = 1;
     }
@@ -127,18 +127,18 @@ const player = new (function () {
     if (!playing || (ground && Math.abs(this.rotation) > Math.PI * 0.5)) {
       playing = false;
       this.rotationSpeed = 5;
-      desktopControls.ArrowUp = 1;
+      controls.ArrowUp = 1;
       this.x -= speed * 5;
     }
 
     // rotation calculator
-    let angle = Math.atan2(point2 - offset - this.y, this.x + 5 - this.x);
+    let angle = Math.atan2(point2 - offset - this.y, (this.x + 5) - this.x);
     if (ground && playing) {
       this.rotation -= (this.rotation - angle) * 0.5;
       this.rotationSpeed = this.rotationSpeed - (angle - this.rotation);
     }
 
-    this.rotationSpeed += (desktopControls.ArrowLeft - desktopControls.ArrowRight) * 0.05;
+    this.rotationSpeed += (controls.ArrowLeft - controls.ArrowRight) * 0.05;
     this.rotation -= this.rotationSpeed * 0.05;
 
     this.rotation -= this.rotationSpeed * 0.1;
@@ -147,7 +147,7 @@ const player = new (function () {
     if (this.rotation > Math.PI) this.rotation = -Math.PI;
     if (this.rotation < -Math.PI) this.rotation = Math.PI;
 
-    this.y += this.gravity;
+    this.y += this.ySpeed;
 
     // drawing
 
@@ -162,7 +162,7 @@ const player = new (function () {
 
 // draw
 function draw() {
-  speed -= (speed - (desktopControls.ArrowUp)) * 0.01;
+  speed -= (speed - (controls.ArrowUp)) * 0.01;
   step += 10 * speed;
 
   // background
@@ -180,7 +180,7 @@ function draw() {
   context.moveTo(offset, c.height - offset);
 
   for (let i = offset; i < c.width - offset; ++i) {
-    context.lineTo(i, c.height * 0.9 - noise(i + step) * yRatio);
+    context.lineTo(i, (c.height * .9) - noise(i + step) * yRatio);
   }
 
   context.lineTo(c.width - offset, c.height - offset);
@@ -207,7 +207,7 @@ if (isMobile) {
     e.preventDefault();
     let touches = e.changedTouches;
     for (let i = 0; i < touches.length; i++) {
-      const touch = touches[i];
+      let touch = touches[i];
       checkButtonPress(touch.pageX, touch.pageY);
     }
   }
@@ -216,19 +216,17 @@ if (isMobile) {
     e.preventDefault();
     let touches = e.changedTouches;
     for (let i = 0; i < touches.length; i++) {
-      const touch = touches[i];
+      let touch = touches[i];
+      checkButtonRelase(touch.pageX, touch.pageY);
     }
   }
-} else {
+} else {  
   // desktop controls
-
-  onkeydown = d => desktopControls[d.key] = 1;
-  onkeyup = d => desktopControls[d.key] = 0;
+  onkeydown = d => controls[d.key] = 1;
+  onkeyup = d => controls[d.key] = 0;
 
   c.addEventListener("click", handleClick, false);
   function handleClick(e) {
-    e.preventDefault();
-    console.log(e.clientX + " " + e.clientY);
     checkButtonPress(e.clientX, e.clientY);
   }
 }
@@ -240,20 +238,20 @@ window.onresize = function () {
 function checkButtonPress(x, y) {
   if (
     !playing &&
-    x > c.width / 2 - 54 &&
-    x < c.width / 2 + 54 &&
-    y > c.height / 3 + 50 &&
-    y < c.height / 3 + 98
+    x > ((c.width / 2) - 54) &&
+    x < ((c.width / 2) + 54) &&
+    y > ((c.height / 3) + 50) &&
+    y < ((c.height / 3) + 98)
   ) {
     window.location.reload();
   }
 
   if (playing && x > 20 && x < 90 && y > c.height - 90 && y < c.height - 20) {
-    console.log("left button");
+    controls.ArrowLeft = 1;
   }
 
   if (playing && x > 110 && x < 180 && y > c.height - 90 && y < c.height - 20) {
-    console.log("right button");
+    controls.ArrowRight = 1;
   }
 
   if (
@@ -263,6 +261,36 @@ function checkButtonPress(x, y) {
     y > c.height - 90 &&
     y < c.height - 20
   ) {
-    console.log("fire button");
+    controls.ArrowUp = 1;
+  }
+}
+
+function checkButtonRelase(x, y) {
+  if (
+    !playing &&
+    x > ((c.width / 2) - 54) &&
+    x < ((c.width / 2) + 54) &&
+    y > ((c.height / 3) + 50) &&
+    y < ((c.height / 3) + 98)
+  ) {
+    window.location.reload();
+  }
+
+  if (playing && x > 20 && x < 90 && y > (c.height - 90) && y < (c.height - 20)) {
+    controls.ArrowLeft = 0;
+  }
+
+  if (playing && x > 110 && x < 180 && y > (c.height - 90) && y < (c.height - 20)) {
+    controls.ArrowRight = 0;
+  }
+
+  if (
+    playing &&
+    x > (c.width - 90) &&
+    x < (c.width - 20) &&
+    y > (c.height - 90) &&
+    y < (c.height - 20)
+  ) {
+    controls.ArrowUp = 0;
   }
 }
