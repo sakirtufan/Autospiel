@@ -61,7 +61,7 @@ const lineColor = "#2f2519";
 const lineWidth = 5;
 const offset = -10;
 let step = 0;
-const yRatio = 0.4;
+const yRatio = 0.3;
 let speed = 0;
 let playing = true;
 
@@ -77,6 +77,34 @@ const player = new (function () {
   // interface
   this.startButton = new Image();
   this.startButton.src = "./UI/start.png";
+  this.leftButton = new Image();
+  this.leftButton.src = "./UI/left.png";
+  this.rightButton = new Image();
+  this.rightButton.src = "./UI/right.png";
+  this.fireButton = new Image();
+  this.fireButton.src = "./UI/fire.png";
+
+  this.drawInterface = function () {
+    if (playing) {
+      // interface drawing
+      context.drawImage(this.leftButton, 20, c.height - 90, 70, 70);
+      context.drawImage(this.rightButton, 110, c.height - 90, 70, 70);
+      context.drawImage(this.fireButton, c.width - 90, c.height - 90, 70, 70);
+    } else {
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.font = "32px Impact";
+      context.fillStyle = "white";
+      context.fillText("Game Over !", c.width / 2, c.height / 3);
+      context.drawImage(
+        this.startButton,
+        c.width / 2 - 54,
+        c.height / 3 + 50,
+        108,
+        48
+      );
+    }
+  };
 
   this.draw = function () {
     let point1 = c.height * 0.9 - noise(this.x + step) * yRatio;
@@ -100,18 +128,7 @@ const player = new (function () {
       this.rotationSpeed = 5;
       this.x -= speed * 5;
 
-      context.textAlign = "center";
-      context.textBaseline = "middle";
-      context.font = "32px Impact";
-      context.fillStyle = "white";
-      context.fillText("Game Over !", c.width / 2, c.height / 3);
-      context.drawImage(
-        this.startButton,
-        c.width / 2 - 54,
-        c.height / 3 + 50,
-        108,
-        48
-      );
+
     }
 
     // rotation calculator
@@ -128,6 +145,10 @@ const player = new (function () {
     if (this.rotation < -Math.PI) this.rotation = Math.PI;
 
     this.y += this.gravity;
+
+    // drawing
+
+    // truck drawing
     context.save();
     context.translate(this.x, this.y);
     context.rotate(this.rotation);
@@ -164,6 +185,8 @@ function draw() {
   context.fill();
   context.stroke();
 
+  player.drawInterface();
+
   // animation
   requestAnimationFrame(draw);
 }
@@ -173,19 +196,51 @@ draw();
 c.addEventListener("touchstart", handleStart, false);
 c.addEventListener("touchend", handleEnd, false);
 
+
 function handleStart(e) {
   e.preventDefault();
   let touches = e.changedTouches;
   for (let i = 0; i < touches.length; i++) {
-    const touch = touches[i];    
+    const touch = touches[i];
 
     if (
+      !playing &&
       touch.pageX > c.width / 2 - 54 &&
       touch.pageX < c.width / 2 + 54 &&
       touch.pageY > c.height / 3 + 50 &&
       touch.pageY < c.height / 3 + 98
     ) {
       window.location.reload();
+    }
+
+    if (
+      playing &&
+      touch.pageX > 20 &&
+      touch.pageX < 90 &&
+      touch.pageY > c.height - 90 &&
+      touch.pageY < c.height - 20
+    ) {
+      console.log("left button");
+    }
+
+    if (
+      playing &&
+      touch.pageX > 110 &&
+      touch.pageX < 180 &&
+      touch.pageY > c.height - 90 &&
+      touch.pageY < c.height - 20
+    ) {
+      console.log("right button");
+    }
+
+    if (
+      playing &&
+      touch.pageX > (c.width-90) &&
+      touch.pageX < (c.width-20) &&
+      touch.pageY > c.height - 90 &&
+      touch.pageY < c.height - 20
+    ) {
+      console.log("fire button");
     }
   }
 }
