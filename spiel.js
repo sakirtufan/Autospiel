@@ -12,8 +12,6 @@ let isMobile = false;
     isMobile = true;
 })(navigator.userAgent || navigator.vendor || window.opera);
 
-console.log(isMobile);
-
 // setup
 const c = document.createElement("canvas");
 c.width = window.innerWidth;
@@ -64,6 +62,7 @@ let step = 0;
 const yRatio = 0.3;
 let speed = 0;
 let playing = true;
+let desktopControls = { ArrowUp: 0, ArrowLeft: 0, ArrowRight: 0 };
 
 const player = new (function () {
   this.x = c.width / 2;
@@ -87,9 +86,11 @@ const player = new (function () {
   this.drawInterface = function () {
     if (playing) {
       // interface drawing
-      context.drawImage(this.leftButton, 20, c.height - 90, 70, 70);
-      context.drawImage(this.rightButton, 110, c.height - 90, 70, 70);
-      context.drawImage(this.fireButton, c.width - 90, c.height - 90, 70, 70);
+      if (isMobile) {
+        context.drawImage(this.leftButton, 20, c.height - 90, 70, 70);
+        context.drawImage(this.rightButton, 110, c.height - 90, 70, 70);
+        context.drawImage(this.fireButton, c.width - 90, c.height - 90, 70, 70);
+      }
     } else {
       context.textAlign = "center";
       context.textBaseline = "middle";
@@ -126,9 +127,8 @@ const player = new (function () {
     if (!playing || (ground && Math.abs(this.rotation) > Math.PI * 0.5)) {
       playing = false;
       this.rotationSpeed = 5;
+      desktopControls.ArrowUp = 1;
       this.x -= speed * 5;
-
-
     }
 
     // rotation calculator
@@ -137,6 +137,9 @@ const player = new (function () {
       this.rotation -= (this.rotation - angle) * 0.5;
       this.rotationSpeed = this.rotationSpeed - (angle - this.rotation);
     }
+
+    this.rotationSpeed += (desktopControls.ArrowLeft - desktopControls.ArrowRight) * 0.05;
+    this.rotation -= this.rotationSpeed * 0.05;
 
     this.rotation -= this.rotationSpeed * 0.1;
 
@@ -159,8 +162,8 @@ const player = new (function () {
 
 // draw
 function draw() {
-  speed -= (speed - 1) * 0.01;
-  step += 5 * speed;
+  speed -= (speed - (desktopControls.ArrowUp)) * 0.01;
+  step += 10 * speed;
 
   // background
   context.fillStyle = bgColor;
@@ -187,69 +190,79 @@ function draw() {
 
   player.drawInterface();
 
+  
+
   // animation
   requestAnimationFrame(draw);
 }
 
 draw();
 
-c.addEventListener("touchstart", handleStart, false);
-c.addEventListener("touchend", handleEnd, false);
+// mobile controls
+if (isMobile) {
+  c.addEventListener("touchstart", handleStart, false);
+  c.addEventListener("touchend", handleEnd, false);
 
-
-function handleStart(e) {
-  e.preventDefault();
-  let touches = e.changedTouches;
-  for (let i = 0; i < touches.length; i++) {
-    const touch = touches[i];
-
-    if (
-      !playing &&
-      touch.pageX > c.width / 2 - 54 &&
-      touch.pageX < c.width / 2 + 54 &&
-      touch.pageY > c.height / 3 + 50 &&
-      touch.pageY < c.height / 3 + 98
-    ) {
-      window.location.reload();
+  function handleStart(e) {
+    e.preventDefault();
+    let touches = e.changedTouches;
+    for (let i = 0; i < touches.length; i++) {
+      const touch = touches[i];
+      checkButtonPress(touch.pageX, touch.pageY);
     }
+  }
 
-    if (
-      playing &&
-      touch.pageX > 20 &&
-      touch.pageX < 90 &&
-      touch.pageY > c.height - 90 &&
-      touch.pageY < c.height - 20
-    ) {
-      console.log("left button");
+  function handleEnd(e) {
+    e.preventDefault();
+    let touches = e.changedTouches;
+    for (let i = 0; i < touches.length; i++) {
+      const touch = touches[i];
     }
+  }
+} else {
+  // desktop controls
 
-    if (
-      playing &&
-      touch.pageX > 110 &&
-      touch.pageX < 180 &&
-      touch.pageY > c.height - 90 &&
-      touch.pageY < c.height - 20
-    ) {
-      console.log("right button");
-    }
+  onkeydown = d => desktopControls[d.key] = 1;
+  onkeyup = d => desktopControls[d.key] = 0;
 
-    if (
-      playing &&
-      touch.pageX > (c.width-90) &&
-      touch.pageX < (c.width-20) &&
-      touch.pageY > c.height - 90 &&
-      touch.pageY < c.height - 20
-    ) {
-      console.log("fire button");
-    }
+  c.addEventListener("click", handleClick, false);
+  function handleClick(e) {
+    e.preventDefault();
+    console.log(e.clientX + " " + e.clientY);
+    checkButtonPress(e.clientX, e.clientY);
   }
 }
 
-function handleEnd(e) {
-  e.preventDefault();
-  let touches = e.changedTouches;
-  for (let i = 0; i < touches.length; i++) {
-    const touch = touches[i];
-    //console.log(touch.pageX, touch.pageY);
+window.onresize = function () {
+  window.location.reload();
+}
+
+function checkButtonPress(x, y) {
+  if (
+    !playing &&
+    x > c.width / 2 - 54 &&
+    x < c.width / 2 + 54 &&
+    y > c.height / 3 + 50 &&
+    y < c.height / 3 + 98
+  ) {
+    window.location.reload();
+  }
+
+  if (playing && x > 20 && x < 90 && y > c.height - 90 && y < c.height - 20) {
+    console.log("left button");
+  }
+
+  if (playing && x > 110 && x < 180 && y > c.height - 90 && y < c.height - 20) {
+    console.log("right button");
+  }
+
+  if (
+    playing &&
+    x > c.width - 90 &&
+    x < c.width - 20 &&
+    y > c.height - 90 &&
+    y < c.height - 20
+  ) {
+    console.log("fire button");
   }
 }
